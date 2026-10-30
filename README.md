@@ -2,7 +2,7 @@
 
 Personal portfolio built for the AWS Builder Center portfolio hackathon. It is a single-page React site with a WebGL globe of my journey and a hidden star-map game, hosted on **AWS Amplify Hosting** from a private **Amazon S3** bucket. The infrastructure is defined with **AWS CDK (Python)** and deployed by **GitHub Actions**.
 
-- Live site: `https://main.<AMPLIFY_APP_ID>.amplifyapp.com` (the `AmplifyAppUrl` output of the stack)
+- Live site: [https://main.d2xgauean4j3zw.amplifyapp.com/](https://main.d2xgauean4j3zw.amplifyapp.com/) (the `AmplifyAppUrl` output of the stack)
 - Repository: https://github.com/Samuel-engineer/portfolio
 
 ## What's on the page
