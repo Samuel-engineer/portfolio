@@ -1,0 +1,305 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------- tokens */
+@theme {
+  --color-space: #060a18;
+  --color-void: #030610;
+  --color-panel: rgb(10 18 38 / 0.72);
+  --color-leaf: #6bd08a;
+  --color-sky: #6fb6ff;
+  --color-amber: #ffb454;
+  --color-mute: #a9b8c9;
+  --color-ink: #e9f0ea;
+
+  --font-serif: 'Fraunces', Georgia, serif;
+  --font-sans: 'Instrument Sans', system-ui, sans-serif;
+
+  /* Fluid type scale: no gaps between breakpoints. */
+  --text-hero: clamp(2.6rem, 8.5vw, 6rem);
+  --text-hero--line-height: 0.95;
+  --text-hero--letter-spacing: -0.035em;
+  --text-closing: clamp(2.25rem, 5vw, 3.5rem);
+  --text-closing--line-height: 1.08;
+  --text-closing--letter-spacing: -0.03em;
+  --text-display: clamp(1.75rem, 4vw, 2.75rem);
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.025em;
+  --text-card: clamp(1.5rem, 2.4vw, 1.75rem);
+  --text-card--line-height: 1.15;
+  --text-card--letter-spacing: -0.02em;
+  --text-feature: clamp(1.75rem, 3vw, 2.25rem);
+  --text-feature--line-height: 1.15;
+  --text-feature--letter-spacing: -0.025em;
+  --text-title: clamp(1.05rem, 1.6vw, 1.25rem);
+  --text-lead: clamp(1.1rem, 2.4vw, 1.5rem);
+  --text-lead--line-height: 1.45;
+  --text-eyebrow: clamp(0.7rem, 1.1vw, 0.8rem);
+
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ------------------------------------------------------------------ base */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* `clip` instead of `hidden`: hidden would turn <body> into a scroll
+       container and break `position: sticky` on the globe stage. */
+    overflow-x: clip;
+  }
+
+  body {
+    overflow-x: clip;
+    background: var(--color-space);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.65;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p { text-wrap: pretty; }
+
+  ::selection { background: var(--color-leaf); color: #04140a; }
+
+  a:focus-visible,
+  button:focus-visible,
+  .star:focus-visible {
+    outline: 3px solid var(--color-amber);
+    outline-offset: 3px;
+  }
+
+  /* Cleared by the header height so anchors never land under it. */
+  section[id] { scroll-margin-top: 6rem; }
+}
+
+/* ------------------------------------------------------------ components */
+@layer components {
+  /* Animated nebula behind everything. Pure CSS, no paint cost per frame
+     beyond the compositor transform. */
+  .aurora {
+    position: fixed;
+    inset: -25%;
+    z-index: -30;
+    pointer-events: none;
+    background:
+      radial-gradient(42% 42% at 72% 6%, rgb(30 78 168 / 0.5), transparent 70%),
+      radial-gradient(36% 36% at 16% 24%, rgb(22 112 94 / 0.34), transparent 70%),
+      radial-gradient(46% 38% at 54% 102%, rgb(66 34 126 / 0.34), transparent 70%);
+    animation: aurora 26s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+  @keyframes aurora {
+    to { transform: translate3d(2.5%, -2.5%, 0) scale(1.1); }
+  }
+
+  /* Card surface shared by every section and project tile. */
+  .panel {
+    position: relative;
+    isolation: isolate;
+    border-radius: 1.5rem;
+    border: 1px solid rgb(111 182 255 / 0.16);
+    background:
+      linear-gradient(162deg, rgb(14 25 52 / 0.84), rgb(7 13 30 / 0.7));
+    backdrop-filter: blur(14px);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.05),
+      0 30px 70px -45px rgb(0 0 0 / 0.95);
+  }
+  /* Hairline of light along the top edge. */
+  .panel::after {
+    content: '';
+    position: absolute;
+    inset-inline: 8%;
+    top: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgb(111 182 255 / 0.55), transparent);
+    pointer-events: none;
+  }
+
+  /* Surface for skill and project cards. Deliberately without
+     backdrop-filter: the starfield behind repaints every frame, so each
+     blurred card would be a full filter pass per frame and janks on mobile.
+     The gradient is opaque enough to read well without it. */
+  .card {
+    position: relative;
+    isolation: isolate;
+    border-radius: 1.5rem;
+    border: 1px solid rgb(111 182 255 / 0.16);
+    background: linear-gradient(162deg, rgb(14 25 52 / 0.84), rgb(7 13 30 / 0.7));
+  }
+
+  /* Cursor-following glow. Coordinates come from useSpotlight(). */
+  .spotlight::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: radial-gradient(
+      22rem circle at var(--mx, 50%) var(--my, 0%),
+      rgb(107 208 138 / 0.14),
+      transparent 60%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+  .spotlight:hover::before,
+  .spotlight:focus-within::before { opacity: 1; }
+
+  /* Hairline that draws itself (useReveal). */
+  .rule {
+    height: 1px;
+    transform-origin: left center;
+    background: rgb(111 182 255 / 0.16);
+  }
+
+  /* Small uppercase label above titles: "01 / About". */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-sky);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 9999px;
+    border: 1px solid rgb(111 182 255 / 0.16);
+    padding: 0.375rem 0.875rem;
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    color: var(--color-mute);
+    white-space: nowrap;
+  }
+
+  /* Dark inset used for the system sketches inside project cards. */
+  .sketch {
+    border-radius: 1rem;
+    border: 1px solid rgb(111 182 255 / 0.07);
+    background: var(--color-void);
+    padding: 1.25rem;
+  }
+  @media (min-width: 640px) { .sketch { padding: 1.5rem; } }
+
+  .sketch-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+
+  .sketch-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(111 182 255 / 0.16);
+    font-size: 0.8125rem;
+    line-height: 1.25;
+    text-align: center;
+  }
+
+  /* Infinite tech strip. Track holds the list twice, so -50% loops seamlessly. */
+  .marquee-mask {
+    mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  }
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee 42s linear infinite;
+  }
+  @keyframes marquee {
+    to { transform: translate3d(-50%, 0, 0); }
+  }
+  .marquee-mask:hover .marquee-track { animation-play-state: paused; }
+
+  /* Soft light pool behind the globe. */
+  .globe-halo {
+    position: absolute;
+    inset: -14%;
+    z-index: -1;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgb(60 120 220 / 0.3), transparent 62%);
+    animation: breathe 9s ease-in-out infinite alternate;
+  }
+  @keyframes breathe {
+    to { transform: scale(1.1); opacity: 0.6; }
+  }
+}
+
+/* ------------------------------------------------------------- utilities */
+/* SVG Earth fallback */
+.land { animation: drift 90s linear infinite; }
+.clouds { animation: drift 60s linear infinite; }
+@keyframes drift { to { transform: translateX(-400px); } }
+
+/* Beacon pulse */
+.dot { animation: ping 1.6s infinite; }
+@keyframes ping {
+  0% { box-shadow: 0 0 0 0 rgb(255 180 84 / 0.7); }
+  100% { box-shadow: 0 0 0 14px rgb(255 180 84 / 0); }
+}
+
+/* Scroll hint arrow */
+.nudge { animation: nudge 2.2s ease-in-out infinite; }
+@keyframes nudge {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(5px); opacity: 1; }
+}
+
+/* Star map */
+.map {
+  width: 100%;
+  aspect-ratio: 1.1;
+  background: radial-gradient(ellipse at 50% 0%, #0b1733 0, #050a1a 70%);
+  border-radius: 0.75rem;
+  touch-action: manipulation;
+}
+@media (min-width: 640px) { .map { aspect-ratio: 1.5; } }
+.map text { fill: var(--color-mute); font-size: 3.4px; pointer-events: none; }
+@media (min-width: 640px) { .map text { font-size: 2.6px; } }
+.star { cursor: pointer; }
+.star .hit { fill: transparent; }
+.star .core {
+  fill: #cfe3ff;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: fill 0.2s;
+}
+.star.on .core { fill: var(--color-leaf); }
+.star.on text { fill: var(--color-ink); }
+.star.next .core { animation: pulse 1s infinite; }
+@keyframes pulse { 50% { transform: scale(1.8); fill: var(--color-amber); } }
+.link {
+  stroke: var(--color-leaf);
+  stroke-width: 0.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+}
+.shoot { stroke: #fff; stroke-width: 0.6; stroke-linecap: round; opacity: 0; }
+
+/* Multi-agent map */
+.node { transform-box: fill-box; transform-origin: center; }
+.wire {
+  stroke: var(--color-sky);
+  stroke-width: 1.5;
+  stroke-dasharray: 1;
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
