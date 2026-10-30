@@ -3,11 +3,12 @@ from aws_cdk import (
     CfnOutput,
     SecretValue,
     aws_amplify_alpha as amplify,
-    aws_codebuild as codebuild,
 )
 from constructs import Construct
 
 BRANCH_NAME = "main"
+# Dossier de l'app front dans le repo (le package.json n'est pas à la racine)
+APP_ROOT = "web"
 
 
 class FrontStack(Stack):
@@ -29,29 +30,9 @@ class FrontStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # 1. Spécification de build (BuildSpec) exécutée par Amplify
-        build_spec = codebuild.BuildSpec.from_object_to_yaml({
-            "version": 1,
-            "frontend": {
-                "phases": {
-                    "preBuild": {
-                        "commands": ["npm ci"]
-                    },
-                    "build": {
-                        "commands": ["npm run build"]
-                    },
-                },
-                "artifacts": {
-                    "baseDirectory": "dist",
-                    "files": ["**/*"],
-                },
-                "cache": {
-                    "paths": ["node_modules/**/*"],
-                },
-            },
-        })
-
-        # 2. Application Amplify connectée au dépôt GitHub
+        # 1. Application Amplify connectée au dépôt GitHub.
+        #    Le buildspec est versionné dans amplify.yml à la racine du repo
+        #    (format monorepo, appRoot: web) : Amplify le lit à chaque build.
         app = amplify.App(
             self,
             "PortfolioApp",
@@ -61,10 +42,12 @@ class FrontStack(Stack):
                 repository=github_repo,
                 oauth_token=SecretValue.secrets_manager(github_token_secret_name),
             ),
-            build_spec=build_spec,
+            # Requis par Amplify pour un buildspec monorepo : doit être égal
+            # à appRoot dans amplify.yml
+            environment_variables={"AMPLIFY_MONOREPO_APP_ROOT": APP_ROOT},
         )
 
-        # 3. Branche de production avec auto-build activé par défaut
+        # 2. Branche de production avec auto-build activé par défaut
         branch = app.add_branch(
             BRANCH_NAME,
             stage="PRODUCTION",
